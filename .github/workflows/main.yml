@@ -50,14 +50,30 @@ jobs:
         npm install -g eslint
         cd ..
 
+    # Run Tests
+    - name: Run Backend Tests
+      run: |
+        npm test -- --coverage
+        
+    - name: Run Frontend Tests
+      run: |
+        cd frontend
+        npm test -- --coverage --watchAll=false
+        cd ..
+
     # Lint Check
     - name: Run ESLint
       run: |
         cd frontend
-        npx eslint . --ext .js,.jsx,.ts,.tsx || echo "Linting completed with warnings"
+        npx eslint . --ext .js,.jsx,.ts,.tsx --max-warnings 0
         cd ..
 
-    
+    # Type Check
+    - name: Run TypeScript Check
+      run: |
+        cd frontend
+        npx tsc --noEmit
+        cd ..
 
     # Build Steps
     - name: Build Frontend
@@ -72,11 +88,20 @@ jobs:
           npm run build
         fi
 
-    # Security Scan
-    - name: Run Security Scan
-      uses: snyk/actions/node@master
-      env:
-        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+    # Security Scans
+    - name: Run npm audit
+      run: |
+        npm audit
+        cd frontend
+        npm audit
+        cd ..
+        
+    - name: Run OWASP Dependency Check
+      uses: dependency-check/Dependency-Check_Action@main
+      with:
+        project: 'Fintech-Marketplace'
+        path: '.'
+        format: 'HTML'
 
     # Docker Build and Push
     - name: Build and Push Docker Image
@@ -90,7 +115,7 @@ jobs:
         docker build -t $kingnorth12/fintech-marketplace:latest .
         
         # Login to Docker Hub
-        echo $Zsexdrcft21@ | docker login -u $kingnorth12 --password-stdin
+        echo $Zsexdrcft21 | docker login -u $kingnorth12 --password-stdin
         
         # Push images to Docker Hub
         docker push $kingnorth12/fintech-marketplace:${{ github.sha }}
@@ -117,6 +142,7 @@ jobs:
     needs: test-and-build
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    environment: production
     
     steps:
     - uses: actions/checkout@v3
@@ -128,16 +154,32 @@ jobs:
         name: ${{ needs.test-and-build.outputs.artifact_name }}
         path: dist
 
-    - name: List downloaded files
-      run: ls -R dist
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
 
-    - name: Deploy to Production
-      env:
-        DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+    - name: Deploy to AWS ECS
       run: |
-        # Add your deployment commands here
-        # Example for deploying to a cloud service:
-        # - AWS ECS
-        # - Google Cloud Run
-        # - Azure Container Apps
-        echo "Deployment step - configure based on your hosting platform" 
+        aws ecs update-service --cluster fintech-cluster --service fintech-service --force-new-deployment
+        
+    - name: Health Check
+      run: |
+        # Wait for deployment to complete
+        aws ecs wait services-stable --cluster fintech-cluster --services fintech-service
+        
+        # Verify application health
+        HEALTH_CHECK_URL="${{ secrets.APP_URL }}/health"
+        for i in {1..30}; do
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" $HEALTH_CHECK_URL)
+          if [ $HTTP_STATUS -eq 200 ]; then
+            echo "Application is healthy!"
+            exit 0
+          fi
+          echo "Waiting for application to be healthy... (Attempt $i/30)"
+          sleep 10
+        done
+        echo "Application failed to become healthy within timeout"
+        exit 1 
