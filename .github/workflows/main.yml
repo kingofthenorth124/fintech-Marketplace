@@ -57,4 +57,87 @@ jobs:
         npx eslint . --ext .js,.jsx,.ts,.tsx || echo "Linting completed with warnings"
         cd ..
 
-   
+    
+
+    # Build Steps
+    - name: Build Frontend
+      run: |
+        cd frontend
+        CI=false npm run build
+        cd ..
+
+    - name: Build Backend
+      run: |
+        if [ -f "package.json" ] && grep -q "\"build\":" "package.json"; then
+          npm run build
+        fi
+
+    # Security Scan
+    - name: Run Security Scan
+      uses: snyk/actions/node@master
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+    # Docker Build and Push
+    - name: Build and Push Docker Image
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      env:
+        kingnorth12: ${{ secrets.DOCKER_USERNAME }}
+        Zsexdrcft21@: ${{ secrets.DOCKER_PASSWORD }}
+      run: |
+        # Build Docker images with different tags
+        docker build -t $kingnorth12/fintech-marketplace:${{ github.sha }} .
+        docker build -t $kingnorth12/fintech-marketplace:latest .
+        
+        # Login to Docker Hub
+        echo $Zsexdrcft21@ | docker login -u $kingnorth12 --password-stdin
+        
+        # Push images to Docker Hub
+        docker push $kingnorth12/fintech-marketplace:${{ github.sha }}
+        docker push $kingnorth12/fintech-marketplace:latest
+
+    # Set artifact name
+    - name: Set artifact name
+      id: set_artifact
+      run: echo "::set-output name=artifact_name::build-${{ github.sha }}"
+
+    # Archive build artifacts
+    - name: Archive production artifacts
+      if: success()
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ steps.set_artifact.outputs.artifact_name }}
+        path: |
+          frontend/build/
+          dist/
+        retention-days: 5
+        if-no-files-found: warn
+
+  deploy:
+    needs: test-and-build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    # Download build artifacts
+    - name: Download build artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: ${{ needs.test-and-build.outputs.artifact_name }}
+        path: dist
+
+    - name: List downloaded files
+      run: ls -R dist
+
+    - name: Deploy to Production
+      env:
+        DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+      run: |
+        # Add your deployment commands here
+        # Example for deploying to a cloud service:
+        # - AWS ECS
+        # - Google Cloud Run
+        # - Azure Container Apps
+        echo "Deployment step - configure based on your hosting platform" 
