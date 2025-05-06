@@ -58,16 +58,32 @@ jobs:
         cd ..
 
     # Unit Tests
-    - name: Run Unit Tests
+    - name: Run Frontend Tests
       run: |
-        # Frontend Tests
         cd frontend
-        npm test -- --watchAll=false --passWithNoTests --coverage
+        echo "Running frontend tests..."
+        CI=true npm test -- --watchAll=false --passWithNoTests --coverage --detectOpenHandles
+        if [ $? -ne 0 ]; then
+          echo "Frontend tests failed"
+          exit 1
+        fi
         cd ..
-        
-        # Backend Tests
-        if [ -f "package.json" ] && grep -q "\"test\":" "package.json"; then
-          npm test || echo "Backend tests completed with warnings"
+
+    - name: Run Backend Tests
+      run: |
+        echo "Running backend tests..."
+        if [ -f "package.json" ]; then
+          if grep -q "\"test\":" "package.json"; then
+            npm test
+            if [ $? -ne 0 ]; then
+              echo "Backend tests failed"
+              exit 1
+            fi
+          else
+            echo "No test script found in backend package.json"
+          fi
+        else
+          echo "No backend package.json found"
         fi
 
     # Build Steps
