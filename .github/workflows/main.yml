@@ -17,12 +17,30 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: '18'
-        cache: 'npm'
 
-    - name: Install Dependencies
-      run: |
-        npm ci
-        cd frontend && npm ci
+    # Backend dependencies
+    - name: Cache backend dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
+
+    - name: Install backend dependencies
+      run: npm install
+
+    # Frontend dependencies
+    - name: Cache frontend dependencies
+      uses: actions/cache@v3
+      with:
+        path: frontend/node_modules
+        key: ${{ runner.os }}-node-frontend-${{ hashFiles('frontend/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-frontend-
+
+    - name: Install frontend dependencies
+      run: cd frontend && npm install
 
     - name: Run Tests
       run: |
@@ -40,11 +58,11 @@ jobs:
         kingnorth12: ${{ secrets.DOCKER_USERNAME }}
         Zsexdrcft21@: ${{ secrets.DOCKER_PASSWORD }}
       run: |
-        docker build -t kingnorth12/fintech-marketplace:${{ github.sha }} .
-        docker build -t kingnorth12/fintech-marketplace:latest .
-        echo Zsexdrcft21@ | docker login -u $DOCKER_USERNAME --password-stdin
-        docker push kingnorth12/fintech-marketplace:${{ github.sha }}
-        docker push kingnorth12/fintech-marketplace:latest
+        docker build -t $kingnorth12/fintech-marketplace:${{ github.sha }} .
+        docker build -t $kingnorth12/fintech-marketplace:latest .
+        echo $Zsexdrcft21@ | docker login -u $DOCKER_USERNAME --password-stdin
+        docker push $kingnorth12/fintech-marketplace:${{ github.sha }}
+        docker push $kingnorth12/fintech-marketplace:latest
 
   deploy:
     needs: test-and-build
