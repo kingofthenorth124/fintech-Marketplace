@@ -104,26 +104,27 @@ jobs:
         Zsexdrcft21@: ${{ secrets.DOCKER_PASSWORD }}
       run: |
         # Build Docker images with different tags
-        docker build -t $Kingnorth12/fintech-marketplace:${{ github.sha }} .
-        docker build -t $Kingnorth12/fintech-marketplace:latest .
+        docker build -t Kingnorth12/fintech-marketplace:${{ github.sha }} .
+        docker build -t Kingnorth12/fintech-marketplace:latest .
         
         # Login to Docker Hub
-        echo $Zsexdrcft21@ | docker login -u $Kingnorth12 --password-stdin
+        echo Zsexdrcft21@ | docker login -u Kingnorth12 --password-stdin
         
         # Push images to Docker Hub
-        docker push $Kingnorth12/fintech-marketplace:${{ github.sha }}
-        docker push $Kingnorth12/fintech-marketplace:latest
+        docker push Kingnorth12/fintech-marketplace:${{ github.sha }}
+        docker push Kingnorth12/fintech-marketplace:latest
 
     # Archive build artifacts
     - name: Archive production artifacts
-      uses: actions/upload-artifact@v3
+      if: success()
+      uses: actions/upload-artifact@v2
       with:
-        name: build-artifacts
+        name: dist-files
         path: |
-          frontend/build
-          dist
-          !node_modules
-          !frontend/node_modules
+          frontend/build/**
+          dist/**
+        retention-days: 5
+        if-no-files-found: warn
 
   deploy:
     needs: test-and-build
@@ -135,10 +136,10 @@ jobs:
     
     # Download build artifacts
     - name: Download build artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v2
       with:
-        name: build-artifacts
-        path: ./build
+        name: dist-files
+        path: dist
 
     - name: Deploy to Production
       env:
@@ -149,4 +150,4 @@ jobs:
         # - AWS ECS
         # - Google Cloud Run
         # - Azure Container Apps
-        echo "Deployment step - configure based on your hosting platform" 
+        echo "Deployment step - configure based on your hosting platform"
