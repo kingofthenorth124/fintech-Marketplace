@@ -1,0 +1,64 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install Dependencies
+      run: |
+        npm ci
+        cd frontend && npm ci
+
+    - name: Run Tests
+      run: |
+        cd frontend && npm test -- --watchAll=false
+        cd .. && npm test
+
+    - name: Run Security Scan
+      uses: snyk/actions/node@master
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+    - name: Build and Push Docker Image
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      env:
+        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      run: |
+        docker build -t kingnorth12/fintech-marketplace:${{ github.sha }} .
+        docker build -t kingnorth12/fintech-marketplace:latest .
+        echo Zsexdrcft21@ | docker login -u $DOCKER_USERNAME --password-stdin
+        docker push kingnorth12/fintech-marketplace:${{ github.sha }}
+        docker push kingnorth12/fintech-marketplace:latest
+
+  deploy:
+    needs: test-and-build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Deploy to Production
+      env:
+        DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+      run: |
+        # Add your deployment commands here
+        # Example for deploying to a cloud service:
+        # - AWS ECS
+        # - Google Cloud Run
+        # - Azure Container Apps
+        echo "Deployment step - configure based on your hosting platform" 
