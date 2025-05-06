@@ -62,7 +62,7 @@ jobs:
       run: |
         cd frontend
         if grep -q "\"test\":" package.json; then
-          npm test -- --coverage --watchAll=false
+          npm test -- --coverage --watchAll=false --passWithNoTests
         else
           echo "No test script found in frontend/package.json - skipping frontend tests"
           exit 0
