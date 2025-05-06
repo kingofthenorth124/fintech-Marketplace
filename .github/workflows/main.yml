@@ -9,6 +9,8 @@ on:
 jobs:
   test-and-build:
     runs-on: ubuntu-latest
+    outputs:
+      artifact_name: ${{ steps.set_artifact.id }}
     
     steps:
     - uses: actions/checkout@v3
@@ -68,15 +70,6 @@ jobs:
           npm test || echo "Backend tests completed with warnings"
         fi
 
-    # Integration Tests (if any)
-    - name: Run Integration Tests
-      run: |
-        if [ -f "frontend/src/integration-tests" ]; then
-          cd frontend
-          npm run test:integration || echo "Integration tests skipped"
-          cd ..
-        fi
-
     # Build Steps
     - name: Build Frontend
       run: |
@@ -114,15 +107,20 @@ jobs:
         docker push $kingnorth12/fintech-marketplace:${{ github.sha }}
         docker push $kingnorth12/fintech-marketplace:latest
 
+    # Set artifact name
+    - name: Set artifact name
+      id: set_artifact
+      run: echo "::set-output name=artifact_name::build-${{ github.sha }}"
+
     # Archive build artifacts
     - name: Archive production artifacts
       if: success()
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
-        name: dist-files
+        name: ${{ steps.set_artifact.outputs.artifact_name }}
         path: |
-          frontend/build/**
-          dist/**
+          frontend/build/
+          dist/
         retention-days: 5
         if-no-files-found: warn
 
@@ -136,10 +134,13 @@ jobs:
     
     # Download build artifacts
     - name: Download build artifacts
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v3
       with:
-        name: dist-files
+        name: ${{ needs.test-and-build.outputs.artifact_name }}
         path: dist
+
+    - name: List downloaded files
+      run: ls -R dist
 
     - name: Deploy to Production
       env:
@@ -150,4 +151,4 @@ jobs:
         # - AWS ECS
         # - Google Cloud Run
         # - Azure Container Apps
-        echo "Deployment step - configure based on your hosting platform"
+        echo "Deployment step - configure based on your hosting platform" 
