@@ -100,19 +100,19 @@ jobs:
     - name: Build and Push Docker Image
       if: github.event_name == 'push' && github.ref == 'refs/heads/main'
       env:
-        Kingnorth12: ${{ secrets.DOCKER_USERNAME }}
+        kingnorth12: ${{ secrets.DOCKER_USERNAME }}
         Zsexdrcft21@: ${{ secrets.DOCKER_PASSWORD }}
       run: |
         # Build Docker images with different tags
-        docker build -t Kingnorth12/fintech-marketplace:${{ github.sha }} .
-        docker build -t Kingnorth12/fintech-marketplace:latest .
+        docker build -t $kingnorth12/fintech-marketplace:${{ github.sha }} .
+        docker build -t $kingnorth12/fintech-marketplace:latest .
         
         # Login to Docker Hub
-        echo Zsexdrcft21@ | docker login -u Kingnorth12 --password-stdin
+        echo $Zsexdrcft21@ | docker login -u $kingnorth12 --password-stdin
         
         # Push images to Docker Hub
-        docker push Kingnorth12/fintech-marketplace:${{ github.sha }}
-        docker push Kingnorth12/fintech-marketplace:latest
+        docker push $kingnorth12/fintech-marketplace:${{ github.sha }}
+        docker push $kingnorth12/fintech-marketplace:latest
 
     # Archive build artifacts
     - name: Archive production artifacts
