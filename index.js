@@ -1,29 +1,70 @@
-require('dotenv').config();
+
 const express = require('express');
 const mongoose = require('mongoose');
-const cors = require('cors');
-const app = express();
-const port = 5000;
+const path = require('path');
+const authRoutes = require('./routes/auth');
+const productsRoutes = require('./routes/products');
+const cartRoutes = require('./routes/cart');
+const transactionsRoutes = require('./routes/transactions');
+const savingsRoutes = require('./routes/savings');
 
-app.use(cors());
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+// Middleware
 app.use(express.json());
 app.use(express.static('public'));
 
-// Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/products', require('./routes/products'));
-app.use('/api/cart', require('./routes/cart'));
-app.use('/api/transactions', require('./routes/transactions'));
-app.use('/api/savings', require('./routes/savings'));
-
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost/fintrade')
-  .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.error('MongoDB connection error:', err));
-
-app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/public/index.html');
+// Connect to MongoDB
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+}).then(() => {
+  console.log('Connected to MongoDB');
+}).catch(err => {
+  console.error('MongoDB connection error:', err);
 });
 
-app.listen(port, '0.0.0.0', () => {
-  console.log(`FINTRADE server running at http://0.0.0.0:${port}`);
+// API Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/products', productsRoutes);
+app.use('/api/cart', cartRoutes);
+app.use('/api/transactions', transactionsRoutes);
+app.use('/api/savings', savingsRoutes);
+
+// Serve static files
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.get('/register', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'register.html'));
+});
+
+app.get('/login', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+
+app.get('/profile', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'profile.html'));
+});
+
+app.get('/products', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'products.html'));
+});
+
+app.get('/cart', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'cart.html'));
+});
+
+app.get('/categories', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'categories.html'));
+});
+
+app.get('/wallet', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'wallet.html'));
+});
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`FINTRADE server running at http://0.0.0.0:${PORT}`);
 });
