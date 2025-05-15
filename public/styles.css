@@ -195,6 +195,30 @@ nav {
   border-radius: 8px;
 }
 
+.security-settings {
+  margin-top: 2rem;
+  padding: 1rem;
+  background: #2d1a3a;
+  border-radius: 8px;
+}
+
+.setting-option {
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid var(--primary);
+  border-radius: 4px;
+}
+
+.setting-option h4 {
+  margin: 0 0 1rem 0;
+  color: var(--primary);
+}
+
+.nav-icon {
+  font-style: normal;
+  margin-right: 0.5rem;
+}
+
 .auth-form {
   max-width: 400px;
   margin: 2rem auto;
