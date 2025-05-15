@@ -9,14 +9,28 @@
   <div class="container">
     <form id="register-form" class="auth-form">
       <h2>Create Account</h2>
-      <input type="text" name="fullName" placeholder="Full Name" required>
-      <input type="email" name="email" placeholder="Email" required>
-      <input type="password" name="password" placeholder="Password" required>
-      <select name="country" id="country-select" required>
-        <option value="">Select Country</option>
-      </select>
-      <button type="submit">Register</button>
-      <p>Already have an account? <a href="/login">Login</a></p>
+      <div class="form-group">
+        <input type="text" name="fullName" placeholder="Full Name" required>
+      </div>
+      <div class="form-group">
+        <input type="email" name="email" placeholder="Email" required>
+      </div>
+      <div class="form-group">
+        <input type="password" name="password" placeholder="Password" required minlength="8">
+      </div>
+      <div class="form-group">
+        <input type="password" name="confirmPassword" placeholder="Confirm Password" required minlength="8">
+      </div>
+      <div class="form-group">
+        <select name="country" id="country-select" required>
+          <option value="">Select Country</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <input type="tel" name="phone" placeholder="Phone Number" required>
+      </div>
+      <button type="submit" class="primary-button">Create Account</button>
+      <p class="form-footer">Already have an account? <a href="/login">Login</a></p>
     </form>
   </div>
   <script src="/js/countries.js"></script>
